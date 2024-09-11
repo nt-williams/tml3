@@ -13,8 +13,12 @@ make_folds <- function(data, folds, id) {
   folded
 }
 
-scale <- function() {
-
+scale <- function(data, outcome, outcome_type) {
+  if (match.arg(outcome_type) == "continuous") {
+    bounds <- c(min(data[[outcome]], na.rm = T), max(data[[outcome]], na.rm = T))
+    data[[outcome]] <- (data[[outcome]] - bounds[1]) / (bounds[2] - bounds[1])
+  }
+  data
 }
 
 rescale <- function() {
