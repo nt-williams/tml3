@@ -5,7 +5,7 @@ tml3_control <- function(.trt_folds = NULL,
                          .discrete = TRUE) {
   list(.discrete = .discrete,
        .trim = .trim,
-       .outcome_folds = outcome_folds,
-       .trt_folds = trt_folds,
-       .cens_folds = cens_folds)
+       .outcome_folds = .outcome_folds,
+       .trt_folds = .trt_folds,
+       .cens_folds = .cens_folds)
 }
