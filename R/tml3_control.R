@@ -1,3 +1,15 @@
+#' Title
+#'
+#' @param .trt_folds
+#' @param .outcome_folds
+#' @param .cens_folds
+#' @param .trim
+#' @param .discrete
+#'
+#' @return
+#' @export
+#'
+#' @examples
 tml3_control <- function(.trt_folds = NULL,
                          .outcome_folds = NULL,
                          .cens_folds = NULL,
