@@ -1,12 +1,31 @@
+#' Cross-validated Targeted Minimum Loss-based Estimation
+#'
+#' @param data
+#' @param trt
+#' @param outcome
+#' @param covar
+#' @param id
+#' @param outcome_type
+#' @param folds
+#' @param learners_trt
+#' @param learners_outcome
+#' @param learners_cens
+#' @param control
+#'
+#' @return
+#' @export
+#'
+#' @examples
 tml3 <- function(data, trt, outcome, covar, id = NULL,
                  outcome_type = c("binomial", "continuous"),
                  folds = 10,
-                 trt_learners = "glm",
-                 outcome_learners = "glm",
-                 cens_learners = trt_learners,
+                 learners_trt = "glm",
+                 learners_outcome = "glm",
+                 learners_cens = learners_trt,
                  control = tml3_control()) {
 
-    tmp <- scale(data, outcome, match.arg(outcome_type))
+    outcome_type <- match.arg(outcome_type)
+    tmp <- scale(data, outcome, outcome_type)
     folds <- make_folds(tmp, folds, id)
     trt_dummy <- format_trt(tmp, trt)
     obs <- as.numeric(!is.na(tmp[[outcome]]))
@@ -62,7 +81,7 @@ tml3 <- function(data, trt, outcome, covar, id = NULL,
           train[ c(covar, outcome, id)],
           train_trt_dummy)[as.logical(obs)[folds[[fold]]$training_set], ],
         target = outcome,
-        library = outcome_learners,
+        library = learners_outcome,
         outcome_type = match.arg(outcome_type),
         folds = control$.outcome_folds,
         newdata = lapply(valids, function(x) cbind(valid[, c(covar, id)], x)),
@@ -79,7 +98,7 @@ tml3 <- function(data, trt, outcome, covar, id = NULL,
           data = cbind(train[, c(covar, id)],
                        get_train(data.frame(obs = obs), folds, fold)),
           target = "obs",
-          library = cens_learners,
+          library = learners_cens,
           folds = control$.cens_folds,
           outcome_type = "binomial",
           newdata = list(valid[, c(covar, id)]),
@@ -98,7 +117,7 @@ tml3 <- function(data, trt, outcome, covar, id = NULL,
           data = cbind(train[, c(covar, id)],
                        train_trt_dummy[, target, drop = FALSE]),
           target = target,
-          library = trt_learners,
+          library = learners_trt,
           outcome_type = "binomial",
           folds = control$.trt_folds,
           newdata = list(valid[, c(covar, id)]),
@@ -158,4 +177,15 @@ tml3 <- function(data, trt, outcome, covar, id = NULL,
     })
 
     names(ses) <- c("A", lvls)
+
+    out <- list(
+      psis = psis,
+      ses = ses,
+      eics = eics,
+      ipw = ipw,
+      icw = icw,
+      m_eps = m_eps
+    )
+    class(out) <- "tml3"
+    out
 }
