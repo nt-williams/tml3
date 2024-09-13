@@ -170,7 +170,7 @@ tml3 <- function(data, trt, outcome, covar, id = NULL,
       ids <- data[[id]]
     }
 
-    ses <- lapply(c("A", lvls), function(a) {
+    ses <- purrr::map_dbl(c("A", lvls), function(a) {
       clusters <- split(eics[[a]], ids)
       j <- length(clusters)
       sqrt(var(vapply(clusters, function(x) mean(x), 1)) / j)
@@ -179,13 +179,15 @@ tml3 <- function(data, trt, outcome, covar, id = NULL,
     names(ses) <- c("A", lvls)
 
     out <- list(
+      lvls = lvls,
       psis = psis,
       ses = ses,
       eics = eics,
       ipw = ipw,
       icw = icw,
-      m_eps = m_eps
+      m_eps = m_eps,
+      call = match.call()
     )
     class(out) <- "tml3"
-    out
+    print(out)
 }
