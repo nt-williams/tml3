@@ -10,20 +10,21 @@
 #' @param learners_trt
 #' @param learners_outcome
 #' @param learners_cens
+#' @param super_efficient
 #' @param control
 #'
 #' @return
 #' @export
 #'
-#' @examples
+#' @example inst/examples/examples.R
 tml3 <- function(data, trt, outcome, covar, id = NULL,
                  outcome_type = c("binomial", "continuous"),
                  folds = 10,
                  learners_trt = "glm",
                  learners_outcome = "glm",
                  learners_cens = learners_trt,
+                 super_efficient = FALSE,
                  control = tml3_control()) {
-
     outcome_type <- match.arg(outcome_type)
     tmp <- scale(data, outcome, outcome_type)
     folds <- make_folds(tmp, folds, id)
@@ -83,7 +84,7 @@ tml3 <- function(data, trt, outcome, covar, id = NULL,
         target = outcome,
         library = learners_outcome,
         outcome_type = match.arg(outcome_type),
-        folds = control$.outcome_folds,
+        folds = control$.learners_outcome_folds,
         newdata = lapply(valids, function(x) cbind(valid[, c(covar, id)], x)),
         group = id
       )
@@ -95,11 +96,10 @@ tml3 <- function(data, trt, outcome, covar, id = NULL,
       # Fit the censoring model
       if (!all(as.logical(obs))) {
         fit_obs <- mlr3superlearner::mlr3superlearner(
-          data = cbind(train[, c(covar, id)],
-                       get_train(data.frame(obs = obs), folds, fold)),
+          data = cbind(train[, c(covar, id)], obs = get_train(data.frame(obs), folds, fold)[[1]]),
           target = "obs",
           library = learners_cens,
-          folds = control$.cens_folds,
+          folds = control$.learners_cens_folds,
           outcome_type = "binomial",
           newdata = list(valid[, c(covar, id)]),
         )
@@ -119,7 +119,7 @@ tml3 <- function(data, trt, outcome, covar, id = NULL,
           target = target,
           library = learners_trt,
           outcome_type = "binomial",
-          folds = control$.trt_folds,
+          folds = control$.learners_trt_folds,
           newdata = list(valid[, c(covar, id)]),
           group = id
         )
@@ -145,7 +145,7 @@ tml3 <- function(data, trt, outcome, covar, id = NULL,
 
     fluc <- suppressWarnings(
       glm(y ~ -1 + offset(qlogis(Q_A)) + H_A,
-          data = tmle_data[obs, ],
+          data = tmle_data[as.logical(obs), ],
           family = binomial)
     )
     eps <- coef(fluc)
@@ -156,12 +156,12 @@ tml3 <- function(data, trt, outcome, covar, id = NULL,
 
     y <- ifelse(is.na(tmp[[outcome]]), -999, tmp[[outcome]])
     psis <- apply(m_eps, 2, mean)
-    eics <- lapply(c("A", lvls), function(lvl) {
+    eics <- purrr::map(c("A", lvls), function(lvl) {
       ipw[, lvl] * icw[, 1] * (y - m_eps[, lvl]) + m_eps[, lvl] - psis[lvl]
     })
     names(eics) <- c("A", lvls)
 
-    eics <- lapply(eics, \(x) rescale(data[[outcome]], x, outcome_type))
+    eics <- purrr::map(eics, \(x) rescale(data[[outcome]], x, outcome_type))
     psis <- purrr::map_dbl(psis, \(x) rescale(data[[outcome]], x, outcome_type))
 
     if (is.null(id)) {
@@ -189,5 +189,5 @@ tml3 <- function(data, trt, outcome, covar, id = NULL,
       call = match.call()
     )
     class(out) <- "tml3"
-    print(out)
+    out
 }

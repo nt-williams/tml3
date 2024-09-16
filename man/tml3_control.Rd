@@ -5,15 +5,16 @@
 \title{Title}
 \usage{
 tml3_control(
-  .trt_folds = NULL,
-  .outcome_folds = NULL,
-  .cens_folds = NULL,
+  .learners_trt_folds = NULL,
+  .learners_outcome_folds = NULL,
+  .learners_cens_folds = NULL,
   .trim = 0.999,
-  .discrete = TRUE
+  .discrete = TRUE,
+  .info = FALSE
 )
 }
 \arguments{
-\item{.discrete}{}
+\item{.info}{}
 }
 \description{
 Title
